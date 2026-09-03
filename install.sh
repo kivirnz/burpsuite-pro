@@ -43,6 +43,26 @@ EOF
 chmod +x burpsuitepro
 sudo cp burpsuitepro /usr/local/bin/burpsuitepro
 
+echo "[*] Downloading icon..."
+wget -q -O burpsuite.ico https://github.com/xiv3r/Burpsuite-Professional/raw/refs/heads/main/burp_suite.ico 2>/dev/null 
+echo "[!] No icon downloaded. Desktop entry will lack icon."
+
+echo "[*] Creating .desktop file..."
+USERNAME=$(whoami)
+cat > ~/.local/share/applications/burpsuitepro.desktop << EOF
+[Desktop Entry]
+Type=Application
+Name=Burp Suite Professional
+Comment=Web Security Testing Tool
+Exec=/usr/lib/jvm/java-21-openjdk/bin/java --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/home/$USERNAME/Burpsuite-Professional/loader.jar -noverify -jar /home/$USERNAME/Burpsuite-Professional/burpsuite_pro_v2026.jar
+Icon=/home/$USERNAME/Burpsuite-Professional/burp_suite.ico
+Terminal=false
+Categories=Development;Security;
+EOF
+
+chmod +x ~/.local/share/applications/burpsuitepro.desktop
+update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
+
 echo "[*] Launching Burp Suite Pro..."
 ./burpsuitepro &
 
