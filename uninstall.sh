@@ -14,11 +14,4 @@ sudo rm -f /usr/local/bin/burpsuitepro
 echo "[*] Removing Burp Suite directory..."
 rm -rf ~/Burpsuite-Professional
 
-echo "[*] Removing Java packages (optional)..."
-read -p "Remove JRE 21 and git/wget? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo pacman -Rs jre21-openjdk git wget --noconfirm
-fi
-
 echo "[*] Done. Burp Suite removed."
