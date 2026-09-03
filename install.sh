@@ -44,10 +44,13 @@ chmod +x burpsuitepro
 sudo cp burpsuitepro /usr/local/bin/burpsuitepro
 
 echo "[*] Downloading icon..."
-wget -q -O burpsuite.ico https://github.com/xiv3r/Burpsuite-Professional/raw/refs/heads/main/burp_suite.ico 2>/dev/null 
-echo "[!] No icon downloaded. Desktop entry will lack icon."
+mkdir -p ~/.local/share/icons
+wget -q -O ~/.local/share/icons/burpsuite.ico https://raw.githubusercontent.com/xiv3r/Burpsuite-Professional/main/burpsuite.ico 2>/dev/null || \
+wget -q -O ~/.local/share/icons/burpsuite.ico https://portswigger.net/favicon.ico 2>/dev/null || \
+echo "[!] No icon downloaded."
 
 echo "[*] Creating .desktop file..."
+mkdir -p ~/.local/share/applications
 USERNAME=$(whoami)
 cat > ~/.local/share/applications/burpsuitepro.desktop << EOF
 [Desktop Entry]
@@ -55,7 +58,7 @@ Type=Application
 Name=Burp Suite Professional
 Comment=Web Security Testing Tool
 Exec=/usr/lib/jvm/java-21-openjdk/bin/java --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/home/$USERNAME/Burpsuite-Professional/loader.jar -noverify -jar /home/$USERNAME/Burpsuite-Professional/burpsuite_pro_v2026.jar
-Icon=/home/$USERNAME/Burpsuite-Professional/burp_suite.ico
+Icon=/home/$USERNAME/.local/share/icons/burpsuite.ico
 Terminal=false
 Categories=Development;Security;
 EOF
