@@ -2,15 +2,16 @@
 
 # Installing Dependencies
 echo "Installing Dependencies..."
-sudo apt update
-sudo apt install git wget openjdk-21-jre -y
+sudo pacman -Sy
+sudo pacman -S git wget jre21-openjdk
 
 # Cloning
+echo "Cloning repo..."
 git clone https://github.com/xiv3r/Burpsuite-Professional.git 
 cd Burpsuite-Professional
 
 # Download Burpsuite Professional
-echo "Downloading Burp Suite Professional Latest..."
+echo "Downloading Burp Suite..."
 version=2026
 wget -O burpsuite_pro_v$version.jar https://github.com/xiv3r/Burpsuite-Professional/releases/download/burpsuite-pro/burpsuite_pro_v$version.jar
 
