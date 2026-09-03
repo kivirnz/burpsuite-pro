@@ -2,8 +2,8 @@
 
 # Installing Dependencies
 echo "Installing Dependencies..."
-sudo pacman -Sy
-sudo pacman -S git wget jre21-openjdk
+sudo pacman -Syu --noconfirm
+sudo pacman -S git wget jre21-openjdk --noconfirm
 sudo archlinux-java set java-21-openjdk
 echo "Cloning repo..."
 git clone https://github.com/xiv3r/Burpsuite-Professional.git 
