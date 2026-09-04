@@ -27,18 +27,19 @@ LOADER_PID=$!
 sleep 2
 
 echo "[*] Detecting display backend..."
-if [ -n "$WAYLAND_DISPLAY" ]; then
+if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     DISPLAY_BACKEND="wayland"
     export GDK_BACKEND=wayland
     export QT_QPA_PLATFORM=wayland
     export XDG_SESSION_TYPE=wayland
+    unset DISPLAY
 elif [ -n "$DISPLAY" ]; then
     DISPLAY_BACKEND="x11"
     export DISPLAY=:0
     export GDK_BACKEND=x11
     export QT_QPA_PLATFORM=xcb
 else
-    DISPLAY_BACKEND="headless"
+    DISPLAY_BACKEND="x11"
     echo "[!] No display detected. Assuming X11."
     export DISPLAY=:0
     export GDK_BACKEND=x11
@@ -51,15 +52,12 @@ cat > burpsuitepro << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Auto-detect display backend
-if [ -n "$WAYLAND_DISPLAY" ]; then
+# Detect display backend
+if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     export GDK_BACKEND=wayland
     export QT_QPA_PLATFORM=wayland
     export XDG_SESSION_TYPE=wayland
-elif [ -n "$DISPLAY" ]; then
-    export DISPLAY=:0
-    export GDK_BACKEND=x11
-    export QT_QPA_PLATFORM=xcb
+    unset DISPLAY
 else
     export DISPLAY=:0
     export GDK_BACKEND=x11
