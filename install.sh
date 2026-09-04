@@ -7,9 +7,13 @@ sudo pacman -Syu --noconfirm
 sudo pacman -S git wget jre21-openjdk --noconfirm
 sudo archlinux-java set java-21-openjdk
 
+echo "[*] Creating directory..."
+sudo mkdir -p /opt/burpsuite
+sudo chown $USER:$USER /opt/burpsuite
+
 echo "[*] Cloning repo..."
-git clone https://github.com/xiv3r/Burpsuite-Professional.git
-cd Burpsuite-Professional
+git clone https://github.com/xiv3r/Burpsuite-Professional.git /opt/burpsuite
+cd /opt/burpsuite
 
 echo "[*] Downloading Burp Suite Pro..."
 version=2026
@@ -50,7 +54,7 @@ echo "[*] Display backend: $DISPLAY_BACKEND"
 echo "[*] Building launcher script..."
 cat > burpsuitepro << 'EOF'
 #!/bin/bash
-cd "$(dirname "$0")"
+cd /opt/burpsuite
 
 # Detect display backend
 if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
@@ -102,7 +106,7 @@ cat > ~/.local/share/applications/burpsuitepro.desktop << EOF
 Type=Application
 Name=Burp Suite Professional
 Comment=Web Security Testing Tool
-Exec=$EXEC_PREFIX /usr/lib/jvm/java-21-openjdk/bin/java -Djava.awt.headless=false -Dawt.toolkit=sun.awt.X11.XToolkit -Dsun.java2d.xrender=true --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/home/$USERNAME/Burpsuite-Professional/loader.jar -noverify -jar /home/$USERNAME/Burpsuite-Professional/burpsuite_pro_v2026.jar
+Exec=$EXEC_PREFIX /usr/lib/jvm/java-21-openjdk/bin/java -Djava.awt.headless=false -Dawt.toolkit=sun.awt.X11.XToolkit -Dsun.java2d.xrender=true --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/opt/burpsuite/loader.jar -noverify -jar /opt/burpsuite/burpsuite_pro_v2026.jar
 Icon=/home/$USERNAME/.local/share/icons/burpsuite.ico
 Terminal=false
 Categories=Development;Security;
@@ -116,3 +120,4 @@ echo "[*] Launching Burp Suite Pro..."
 
 echo "[*] Done. Loader PID: $LOADER_PID"
 echo "[*] Display backend: $DISPLAY_BACKEND"
+echo "[*] Burp Suite installed to /opt/burpsuite"
