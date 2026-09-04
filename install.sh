@@ -26,7 +26,7 @@ if [ ! -f loader.jar ]; then
 fi
 
 echo "[*] Starting loader..."
-java -jar loader.jar &
+sudo java -jar loader.jar &
 LOADER_PID=$!
 sleep 2
 
@@ -50,6 +50,7 @@ if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     export DISPLAY=:0
     export GDK_BACKEND=x11
     export QT_QPA_PLATFORM=xcb
+    export _JAVA_AWT_WM_NONREPARENTING=1
     # Ensure XWayland is running
     if ! pgrep -x "Xwayland" > /dev/null; then
         Xwayland :0 -retro &
@@ -61,7 +62,7 @@ else
     export QT_QPA_PLATFORM=xcb
 fi
 
-java -Djava.awt.headless=false \
+sudo java -Djava.awt.headless=false \
      -Dawt.toolkit=sun.awt.X11.XToolkit \
      -Dsun.java2d.xrender=true \
      -Dsun.java2d.opengl=true \
