@@ -2,7 +2,7 @@
 
 set -e
 
-echo "[*] Detecting display backend..."
+# Detect display backend without sudo
 if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
     DISPLAY_BACKEND="wayland"
     JAVA_PKG="jdk-openjdk-wakefield"
@@ -47,8 +47,8 @@ cat > burpsuitepro << 'EOF'
 #!/bin/bash
 cd /opt/burpsuite
 
-# Detect display backend at runtime
-if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+# Detect display backend at runtime using /proc
+if [ -n "$WAYLAND_DISPLAY" ] || [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     # Wayland - use Wakefield
     export _JAVA_OPTIONS="-Dawt.toolkit.name=WLToolkit -Dsun.java2d.vulkan=True"
     export GDK_BACKEND=wayland
