@@ -26,11 +26,50 @@ java -jar loader.jar &
 LOADER_PID=$!
 sleep 2
 
+echo "[*] Detecting display backend..."
+if [ -n "$WAYLAND_DISPLAY" ]; then
+    DISPLAY_BACKEND="wayland"
+    export GDK_BACKEND=wayland
+    export QT_QPA_PLATFORM=wayland
+    export XDG_SESSION_TYPE=wayland
+elif [ -n "$DISPLAY" ]; then
+    DISPLAY_BACKEND="x11"
+    export DISPLAY=:0
+    export GDK_BACKEND=x11
+    export QT_QPA_PLATFORM=xcb
+else
+    DISPLAY_BACKEND="headless"
+    echo "[!] No display detected. Assuming X11."
+    export DISPLAY=:0
+    export GDK_BACKEND=x11
+    export QT_QPA_PLATFORM=xcb
+fi
+echo "[*] Display backend: $DISPLAY_BACKEND"
+
 echo "[*] Building launcher script..."
 cat > burpsuitepro << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
-java --add-opens=java.desktop/javax.swing=ALL-UNNAMED \
+
+# Auto-detect display backend
+if [ -n "$WAYLAND_DISPLAY" ]; then
+    export GDK_BACKEND=wayland
+    export QT_QPA_PLATFORM=wayland
+    export XDG_SESSION_TYPE=wayland
+elif [ -n "$DISPLAY" ]; then
+    export DISPLAY=:0
+    export GDK_BACKEND=x11
+    export QT_QPA_PLATFORM=xcb
+else
+    export DISPLAY=:0
+    export GDK_BACKEND=x11
+    export QT_QPA_PLATFORM=xcb
+fi
+
+java -Djava.awt.headless=false \
+     -Dawt.toolkit=sun.awt.X11.XToolkit \
+     -Dsun.java2d.xrender=true \
+     --add-opens=java.desktop/javax.swing=ALL-UNNAMED \
      --add-opens=java.base/java.lang=ALL-UNNAMED \
      --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
      --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
@@ -52,12 +91,20 @@ echo "[!] No icon downloaded."
 echo "[*] Creating .desktop file..."
 mkdir -p ~/.local/share/applications
 USERNAME=$(whoami)
+
+# Build exec command based on detected backend
+if [ "$DISPLAY_BACKEND" = "wayland" ]; then
+    EXEC_PREFIX="env GDK_BACKEND=wayland QT_QPA_PLATFORM=wayland XDG_SESSION_TYPE=wayland"
+else
+    EXEC_PREFIX="env DISPLAY=:0 GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb"
+fi
+
 cat > ~/.local/share/applications/burpsuitepro.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=Burp Suite Professional
 Comment=Web Security Testing Tool
-Exec=/usr/lib/jvm/java-21-openjdk/bin/java --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/home/$USERNAME/Burpsuite-Professional/loader.jar -noverify -jar /home/$USERNAME/Burpsuite-Professional/burpsuite_pro_v2026.jar
+Exec=$EXEC_PREFIX /usr/lib/jvm/java-21-openjdk/bin/java -Djava.awt.headless=false -Dawt.toolkit=sun.awt.X11.XToolkit -Dsun.java2d.xrender=true --add-opens=java.desktop/javax.swing=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED -javaagent:/home/$USERNAME/Burpsuite-Professional/loader.jar -noverify -jar /home/$USERNAME/Burpsuite-Professional/burpsuite_pro_v2026.jar
 Icon=/home/$USERNAME/.local/share/icons/burpsuite.ico
 Terminal=false
 Categories=Development;Security;
@@ -70,3 +117,4 @@ echo "[*] Launching Burp Suite Pro..."
 ./burpsuitepro &
 
 echo "[*] Done. Loader PID: $LOADER_PID"
+echo "[*] Display backend: $DISPLAY_BACKEND"
