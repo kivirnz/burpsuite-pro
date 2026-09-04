@@ -2,9 +2,21 @@
 
 set -e
 
+echo "[*] Detecting display backend..."
+if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
+    DISPLAY_BACKEND="wayland"
+    JAVA_PKG="jdk-openjdk-wakefield"
+    echo "[*] Wayland detected. Using Wakefield toolkit."
+else
+    DISPLAY_BACKEND="x11"
+    JAVA_PKG="jre21-openjdk"
+    echo "[*] X11 detected. Using standard JDK."
+fi
+echo "[*] Display backend: $DISPLAY_BACKEND"
+
 echo "[*] Installing dependencies..."
 sudo pacman -Syu --noconfirm
-sudo pacman -S git wget jre21-openjdk xorg-xwayland --noconfirm
+sudo pacman -S git wget $JAVA_PKG xorg-xwayland --noconfirm
 sudo archlinux-java set java-21-openjdk
 
 echo "[*] Creating directory..."
@@ -26,54 +38,52 @@ if [ ! -f loader.jar ]; then
 fi
 
 echo "[*] Starting loader..."
-sudo java -jar loader.jar &
+java -jar loader.jar &
 LOADER_PID=$!
 sleep 2
-
-echo "[*] Detecting display backend..."
-if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
-    DISPLAY_BACKEND="wayland"
-    echo "[*] Wayland detected. Using XWayland."
-else
-    DISPLAY_BACKEND="x11"
-    echo "[*] X11 detected."
-fi
-echo "[*] Display backend: $DISPLAY_BACKEND"
 
 echo "[*] Building launcher script..."
 cat > burpsuitepro << 'EOF'
 #!/bin/bash
 cd /opt/burpsuite
 
-# Force XWayland for Wayland sessions
+# Detect display backend at runtime
 if [ "$XDG_SESSION_TYPE" = "wayland" ] || [ -n "$WAYLAND_DISPLAY" ]; then
-    export DISPLAY=:0
-    export GDK_BACKEND=x11
-    export QT_QPA_PLATFORM=xcb
-    export _JAVA_AWT_WM_NONREPARENTING=1
-    # Ensure XWayland is running
-    if ! pgrep -x "Xwayland" > /dev/null; then
-        Xwayland :0 -retro &
-        sleep 2
-    fi
+    # Wayland - use Wakefield
+    export _JAVA_OPTIONS="-Dawt.toolkit.name=WLToolkit -Dsun.java2d.vulkan=True"
+    export GDK_BACKEND=wayland
+    export QT_QPA_PLATFORM=wayland
+    export XDG_SESSION_TYPE=wayland
+    unset DISPLAY
+    
+    java -Djava.awt.headless=false \
+         --add-opens=java.desktop/javax.swing=ALL-UNNAMED \
+         --add-opens=java.base/java.lang=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED \
+         -javaagent:./loader.jar \
+         -noverify \
+         -jar ./burpsuite_pro_v2026.jar
 else
+    # X11 - standard JDK
     export DISPLAY=:0
     export GDK_BACKEND=x11
     export QT_QPA_PLATFORM=xcb
+    
+    java -Djava.awt.headless=false \
+         -Dawt.toolkit=sun.awt.X11.XToolkit \
+         -Dsun.java2d.xrender=true \
+         -Dsun.java2d.opengl=true \
+         --add-opens=java.desktop/javax.swing=ALL-UNNAMED \
+         --add-opens=java.base/java.lang=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+         --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED \
+         -javaagent:./loader.jar \
+         -noverify \
+         -jar ./burpsuite_pro_v2026.jar
 fi
-
-sudo java -Djava.awt.headless=false \
-     -Dawt.toolkit=sun.awt.X11.XToolkit \
-     -Dsun.java2d.xrender=true \
-     -Dsun.java2d.opengl=true \
-     --add-opens=java.desktop/javax.swing=ALL-UNNAMED \
-     --add-opens=java.base/java.lang=ALL-UNNAMED \
-     --add-opens=java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-     --add-opens=java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
-     --add-opens=java.base/jdk.internal.org.objectweb.asm.Opcodes=ALL-UNNAMED \
-     -javaagent:./loader.jar \
-     -noverify \
-     -jar ./burpsuite_pro_v2026.jar
 EOF
 
 chmod +x burpsuitepro
@@ -109,4 +119,5 @@ echo "[*] Launching Burp Suite Pro..."
 
 echo "[*] Done. Loader PID: $LOADER_PID"
 echo "[*] Display backend: $DISPLAY_BACKEND"
+echo "[*] Java package installed: $JAVA_PKG"
 echo "[*] Burp Suite installed to /opt/burpsuite"
